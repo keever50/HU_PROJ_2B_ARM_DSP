@@ -23,7 +23,9 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "log.h"
+#include "string.h"
+#include "stdlib.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -56,10 +58,16 @@ osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
   .name = "defaultTask",
   .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+  .priority = (osPriority_t) osPriorityIdle,
+
 };
 /* USER CODE BEGIN PV */
-
+osThreadId_t mainTaskHandle;
+const osThreadAttr_t mainTask_attributes = {
+  .name = "mainTask",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -78,7 +86,11 @@ void StartDefaultTask(void *argument);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+void log_out(const char *msg)
+{
+	HAL_UART_Transmit(&huart4, (uint8_t*)msg, strlen(msg), 500);
+	HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), 500);
+}
 /* USER CODE END 0 */
 
 /**
@@ -158,6 +170,7 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
+
 
     /* USER CODE BEGIN 3 */
   }
@@ -505,7 +518,21 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void mainTask(void *argument)
+{
+	int i=0;
+	for(;;)
+	{
+		osDelay(1000);
+		LOGF(LOG_NOTICE, "Logging test", 0);
+		for(int lvl=0;lvl<=LOG_CRITICAL;lvl++)
+		{
+			LOGF(lvl, "Log level %d", lvl);
+		}
+		LOGF(LOG_NOTICE, "End logging test\n\n", 0);
 
+	}
+}
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -520,10 +547,12 @@ void StartDefaultTask(void *argument)
   /* init code for USB_HOST */
   MX_USB_HOST_Init();
   /* USER CODE BEGIN 5 */
+  mainTaskHandle = osThreadNew(mainTask, NULL, &mainTask_attributes);
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+
+
   }
   /* USER CODE END 5 */
 }
